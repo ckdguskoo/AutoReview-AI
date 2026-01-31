@@ -8,11 +8,10 @@ PR 생성부터 AI 리뷰, 자동 수정, rebase 자동 머지까지 이어지�
 flowchart TD
   A[Developer Push] --> B[PR 생성]
   B --> C[GitHub Actions: AI Review]
-  C --> D[AI Agents
-Style/BugRisk/Performance/Security/Summary]
+  C --> D[AI Agents]
   D --> E[PR Review Comment]
   D --> F[Check: ai_suitability]
-  F -->|pass| G[Enable Auto-merge (Rebase)]
+  F -->|pass| G[Enable Auto-merge]
   F -->|fail| H[AI AutoFix Workflow]
   H --> I[Apply Patch + Create AutoFix PR]
 ```
