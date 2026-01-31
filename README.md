@@ -2,6 +2,21 @@
 
 PR 생성부터 AI 리뷰, 자동 수정, rebase 자동 머지까지 이어지는 **AI 기반 코드 리뷰/PR 평가 자동화 시스템**입니다. GitHub Actions와 멀티 에이전트를 활용해 리뷰 품질과 일관성을 높이고, 위험도가 높은 변경은 자동으로 차단/수정하도록 설계되었습니다.
 
+## 아키텍처 흐름도
+
+```mermaid
+flowchart TD
+  A[Developer Push] --> B[PR 생성]
+  B --> C[GitHub Actions: AI Review]
+  C --> D[AI Agents
+Style/BugRisk/Performance/Security/Summary]
+  D --> E[PR Review Comment]
+  D --> F[Check: ai_suitability]
+  F -->|pass| G[Enable Auto-merge (Rebase)]
+  F -->|fail| H[AI AutoFix Workflow]
+  H --> I[Apply Patch + Create AutoFix PR]
+```
+
 ## 핵심 흐름
 1. 사용자가 PR 생성
 2. GitHub Actions가 AI 리뷰 실행 → PR 코멘트 + `ai_suitability` 체크 생성
