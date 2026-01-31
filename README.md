@@ -24,7 +24,7 @@ flowchart TD
 
 ## 주요 기능
 - 멀티 에이전트 리뷰(Style/BugRisk/Performance/Security/Summary)
-- 에이전트별 프롬프트/스키마/체크리스트 기반 리뷰
+- 에이전트별 프롬프트/체크리스트 기반 리뷰
 - OpenAI API 연동(리뷰/자동수정)
 - AutoFix 안전장치(패치 크기/확장자 제한, 재시도 정책)
 - 정책 기반 머지/차단 관리(`config/review-policy.yaml`)
@@ -43,11 +43,14 @@ GET http://127.0.0.1:8000/health
 
 ## 필수 설정(Repository Secrets)
 - `OPENAI_API_KEY`
-- `AI_GITHUB_TOKEN` (GitHub App 토큰)
+- `GH_APP_ID`
+- `GH_APP_PRIVATE_KEY`
 
 선택:
 - `OPENAI_ORG`
 - `OPENAI_PROJECT`
+
+> GitHub App 토큰은 Actions에서 **자동 생성**합니다.
 
 ## 브랜치 보호 및 Auto-merge 설정(권장)
 자동 설정 스크립트 사용:
@@ -56,13 +59,8 @@ GET http://127.0.0.1:8000/health
 .\scripts\configure_github.ps1 -Owner "ORG" -Repo "REPO" -Branch "main"
 ```
 
-## 문서 안내
-- `dev-plan.md`: 개발 계획서 초안
-- `docs/user-install.md`: 사용자 설치/설정 가이드(자동설정 스크립트 포함)
-- `docs/github-setup.md`: GitHub App/브랜치 보호 설정
-- `docs/current-status.md`: 현재 구현 상태
-- `docs/agent-spec.md`: 에이전트 출력 스키마
-- `docs/work-summary.md`: 최근 작업 요약
+## 테스트 체크리스트
+- `TEST-CHECKLIST.md`
 
 ## 구성 파일
 - `config/review-policy.yaml`: 머지/차단 정책
@@ -72,8 +70,9 @@ GET http://127.0.0.1:8000/health
 ## 개발/운영 FAQ
 
 **Q. 리뷰/코멘트가 PR에 안 보입니다.**
-- `AI_GITHUB_TOKEN` 권한 확인(Pull requests/Checks/Contents/Issues)
+- GitHub App 권한 확인(Pull requests/Checks/Contents/Issues)
 - GitHub App이 해당 저장소에 설치되어 있는지 확인
+- `GH_APP_ID`, `GH_APP_PRIVATE_KEY` 설정 여부 확인
 
 **Q. `ai_suitability` 체크가 생성되지 않습니다.**
 - Actions 실행 여부 확인

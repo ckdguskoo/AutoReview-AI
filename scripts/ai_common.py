@@ -5,7 +5,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 import requests
 import yaml
@@ -27,7 +27,10 @@ def load_yaml(path: Path) -> dict:
 def read_file_lines(path: Path, max_bytes: int) -> list[str]:
     if not path.exists() or not path.is_file():
         return []
-    if path.stat().st_size > max_bytes:
+    try:
+        if path.stat().st_size > max_bytes:
+            return []
+    except OSError:
         return []
     try:
         return path.read_text(encoding="utf-8").splitlines()
@@ -38,6 +41,10 @@ def read_file_lines(path: Path, max_bytes: int) -> list[str]:
 def write_file_lines(path: Path, lines: Iterable[str]) -> None:
     text = "\n".join(lines) + "\n"
     path.write_text(text, encoding="utf-8")
+
+
+def write_json(path: Path, data: Any) -> None:
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def extract_output_text(response_json: dict) -> str:

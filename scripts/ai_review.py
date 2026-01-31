@@ -3,12 +3,17 @@
 import json
 import os
 import re
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-from scripts.ai_common import call_openai, load_yaml, read_file_lines, run_git
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from scripts.ai_common import call_openai, load_yaml, read_file_lines, run_git, write_json
 
 POLICY_PATH = Path("config/review-policy.yaml")
 AGENT_PROMPTS_PATH = Path("config/agent-prompts.yaml")
@@ -313,7 +318,7 @@ def main() -> int:
     }
 
     out = os.environ.get("AI_REVIEW_OUTPUT", "ai_review.json")
-    Path(out).write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_json(Path(out), result)
     print(f"Wrote review to {out}")
     return 0
 

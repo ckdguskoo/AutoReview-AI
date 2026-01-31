@@ -4,10 +4,15 @@ import json
 import os
 import subprocess
 import time
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from scripts.ai_common import call_openai, load_yaml, read_file_lines, run_git, write_file_lines
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from scripts.ai_common import call_openai, load_yaml, read_file_lines, run_git, write_file_lines, write_json
 
 POLICY_PATH = Path("config/review-policy.yaml")
 MAX_FILE_BYTES = 1_000_000
@@ -162,7 +167,7 @@ def main() -> int:
     }
 
     out = os.environ.get("AI_AUTOFIX_OUTPUT", "ai_autofix.json")
-    Path(out).write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_json(Path(out), result)
     print(f"Wrote autofix to {out}")
     return 0
 
