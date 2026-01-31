@@ -1,0 +1,8 @@
+﻿name: fastapi
+scope: "FastAPI 규칙"
+checks:
+  - "의존성 주입(Depends) 누락"
+  - "입력 스키마(Body/Query) 검증"
+  - "라우트 권한/인증 적용 여부"
+  - "응답 모델/상태코드 일관성"
+  - "비동기 함수에서 블로킹 호출 여부"

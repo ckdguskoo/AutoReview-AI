@@ -1,0 +1,133 @@
+﻿name: AI AutoFix
+
+on:
+  workflow_run:
+    workflows: ["AI Review"]
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: write
+  issues: write
+
+jobs:
+  ai-autofix:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load PR context
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.AI_GITHUB_TOKEN || github.token }}
+          script: |
+            const prs = context.payload.workflow_run.pull_requests;
+            if (!prs || prs.length === 0) {
+              core.setFailed('No PR context found.');
+              return;
+            }
+            const pr = prs[0];
+            core.setOutput('number', pr.number);
+            core.setOutput('head_ref', pr.head.ref);
+            core.setOutput('base_ref', pr.base.ref);
+            core.setOutput('head_repo', pr.head.repo.full_name);
+            core.setOutput('base_repo', pr.base.repo.full_name);
+            core.setOutput('head_owner', pr.head.repo.owner.login);
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr.outputs.head_repo }}
+          ref: ${{ steps.pr.outputs.head_ref }}
+          fetch-depth: 0
+          token: ${{ secrets.AI_GITHUB_TOKEN || github.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install AI autofix deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r scripts/requirements.txt
+
+      - name: Mask secrets
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_ORG: ${{ secrets.OPENAI_ORG }}
+          OPENAI_PROJECT: ${{ secrets.OPENAI_PROJECT }}
+        run: |
+          echo "::add-mask::$OPENAI_API_KEY"
+          echo "::add-mask::$OPENAI_ORG"
+          echo "::add-mask::$OPENAI_PROJECT"
+
+      - name: Run AI autofix
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          RUN_ID: ${{ github.run_id }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_ORG: ${{ secrets.OPENAI_ORG }}
+          OPENAI_PROJECT: ${{ secrets.OPENAI_PROJECT }}
+        run: |
+          python scripts/ai_autofix.py
+
+      - name: Commit and push fixes
+        id: push
+        run: |
+          python - <<'PY'
+          import json
+          data = json.load(open('ai_autofix.json', 'r', encoding='utf-8'))
+          if not data.get('applied'):
+              print('No changes.')
+              raise SystemExit(0)
+          PY
+
+          git status --porcelain
+          git config user.email "ai-bot@example.com"
+          git config user.name "AI AutoFix"
+
+          BRANCH_NAME=$(python - <<'PY'
+          import json
+          data = json.load(open('ai_autofix.json', 'r', encoding='utf-8'))
+          print(data.get('branch_name'))
+          PY
+          )
+
+          PR_TITLE=$(python - <<'PY'
+          import json
+          data = json.load(open('ai_autofix.json', 'r', encoding='utf-8'))
+          print(data.get('pr_title'))
+          PY
+          )
+
+          git checkout -b "$BRANCH_NAME"
+          git add -A
+          git commit -m "$PR_TITLE"
+          git push origin "$BRANCH_NAME"
+
+      - name: Create autofix PR
+        if: ${{ steps.push.outcome == 'success' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.AI_GITHUB_TOKEN || github.token }}
+          script: |
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('ai_autofix.json', 'utf8'));
+            if (!data.applied) {
+              core.info('No fixes applied.');
+              return;
+            }
+            const baseRepo = '${{ steps.pr.outputs.base_repo }}';
+            const [owner, repo] = baseRepo.split('/');
+            const headOwner = '${{ steps.pr.outputs.head_owner }}';
+            const head = headOwner + ':' + data.branch_name;
+            await github.rest.pulls.create({
+              owner,
+              repo,
+              title: data.pr_title,
+              head,
+              base: '${{ steps.pr.outputs.base_ref }}',
+              body: 'AI 자동 수정 PR'
+            });

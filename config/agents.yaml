@@ -1,0 +1,38 @@
+# Multi-agent review configuration
+agents:
+  - name: StyleAgent
+    focus: "코드 스타일"
+    approach: "규칙 기반 + AI"
+    priority: "보통"
+  - name: BugRiskAgent
+    focus: "NPE / 로직 오류"
+    approach: "중요"
+    priority: "높음"
+  - name: PerformanceAgent
+    focus: "반복 / N+1"
+    approach: "중급"
+    priority: "중간"
+  - name: SecurityAgent
+    focus: "인증/인가"
+    approach: "고평가"
+    priority: "높음"
+  - name: SummaryAgent
+    focus: "리뷰 요약"
+    approach: "PR 코멘트용"
+    priority: "보통"
+
+routing:
+  default_order:
+    - BugRiskAgent
+    - SecurityAgent
+    - PerformanceAgent
+    - StyleAgent
+    - SummaryAgent
+  stop_on_blocking: true
+  blocking_agents:
+    - BugRiskAgent
+    - SecurityAgent
+
+output:
+  format: "markdown"
+  include_scores: false

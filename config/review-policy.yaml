@@ -1,0 +1,47 @@
+﻿# Repository-specific merge and review policy
+policy:
+  merge_method: "rebase"
+  require_ai_review: true
+  require_ai_test: true
+  auto_fix_enabled: true
+
+checks:
+  ai_review:
+    required: true
+  ai_suitability:
+    required: true
+
+review:
+  agents_order:
+    - BugRiskAgent
+    - SecurityAgent
+    - PerformanceAgent
+    - StyleAgent
+    - SummaryAgent
+  blocking_agents:
+    - BugRiskAgent
+    - SecurityAgent
+  severity_rank:
+    blocking: 3
+    warn: 2
+    info: 1
+  max_comments_total: 50
+  max_comments_per_file: 8
+  dedupe: true
+  rule_templates: ["python", "fastapi"]
+
+ai:
+  provider: "openai"
+  review_model: "gpt-4.1"
+  autofix_model: "gpt-4.1"
+  temperature: 0.2
+  max_output_tokens: 1200
+  request_timeout_sec: 120
+
+autofix:
+  branch_prefix: "auto/fix"
+  pr_title_template: "AI:feat {change_summary}"
+  max_attempts: 3
+  retry_backoff_sec: 2
+  allowed_extensions: [".py", ".md"]
+  max_patch_chars: 200000

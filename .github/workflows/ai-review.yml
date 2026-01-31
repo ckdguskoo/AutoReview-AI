@@ -1,0 +1,123 @@
+﻿name: AI Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  issues: write
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install AI review deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r scripts/requirements.txt
+
+      - name: Mask secrets
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_ORG: ${{ secrets.OPENAI_ORG }}
+          OPENAI_PROJECT: ${{ secrets.OPENAI_PROJECT }}
+        run: |
+          echo "::add-mask::$OPENAI_API_KEY"
+          echo "::add-mask::$OPENAI_ORG"
+          echo "::add-mask::$OPENAI_PROJECT"
+
+      - name: Run AI review
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_ORG: ${{ secrets.OPENAI_ORG }}
+          OPENAI_PROJECT: ${{ secrets.OPENAI_PROJECT }}
+        run: |
+          python scripts/ai_review.py
+
+      - name: Post review to PR
+        if: ${{ always() }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.AI_GITHUB_TOKEN || github.token }}
+          script: |
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('ai_review.json', 'utf8'));
+            const event = context.payload.pull_request;
+            const body = data.summary + "\n\n" + data.details + "\n\n" + "(자동 리뷰)";
+            const review = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: event.number,
+              body,
+              event: data.blocking ? 'REQUEST_CHANGES' : 'APPROVE'
+            };
+            await github.rest.pulls.createReview(review);
+
+      - name: Set AI suitability check
+        if: ${{ always() }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.AI_GITHUB_TOKEN || github.token }}
+          script: |
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('ai_review.json', 'utf8'));
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'ai_suitability',
+              head_sha: context.payload.pull_request.head.sha,
+              status: 'completed',
+              conclusion: data.suitability_pass ? 'success' : 'failure',
+              output: {
+                title: 'AI Suitability',
+                summary: data.summary
+              }
+            });
+
+      - name: Enable auto-merge (rebase)
+        if: ${{ always() }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.AI_GITHUB_TOKEN || github.token }}
+          script: |
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('ai_review.json', 'utf8'));
+            if (data.blocking || !data.suitability_pass) {
+              core.info('Blocking issues found. Skipping auto-merge.');
+              return;
+            }
+            const pr = context.payload.pull_request;
+            await github.graphql(
+              `mutation($pullRequestId: ID!) {
+                enablePullRequestAutoMerge(input: { pullRequestId: $pullRequestId, mergeMethod: REBASE }) {
+                  pullRequest { number }
+                }
+              }`,
+              { pullRequestId: pr.node_id }
+            );
+            core.info('Auto-merge enabled (rebase).');
+
+      - name: Fail job if blocking
+        if: ${{ always() }}
+        run: |
+          python - <<'PY'
+          import json
+          with open('ai_review.json', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+          if data.get('blocking') or not data.get('suitability_pass'):
+              raise SystemExit(1)
+          PY

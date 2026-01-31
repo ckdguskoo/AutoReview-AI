@@ -1,0 +1,143 @@
+﻿# Agent prompts and output schema definitions
+agents:
+  StyleAgent:
+    purpose: "코드 스타일/가독성 개선"
+    blocking: false
+    checks:
+      - "라인 길이/포맷팅 불일치"
+      - "네이밍/일관성"
+      - "불필요한 중복/복잡도"
+      - "불필요한 주석/죽은 코드"
+    severity_guidelines:
+      info: "가독성 개선 제안"
+      warn: "혼란을 유발하는 스타일 문제"
+      blocking: "없음"
+    prompt: |
+      You are StyleAgent. Review code style issues only.
+      Focus on readability, naming, formatting, unnecessary complexity.
+      Do not report functional bugs or security issues.
+      Return JSON only.
+    schema:
+      type: object
+      properties:
+        summary: { type: string }
+        comments:
+          type: array
+          items:
+            type: object
+            properties:
+              path: { type: string }
+              line: { type: integer }
+              agent: { type: string }
+              level: { type: string, enum: [info, warn, blocking] }
+              body: { type: string }
+        blocking: { type: boolean }
+  BugRiskAgent:
+    purpose: "NPE/로직 오류 탐지"
+    blocking: true
+    checks:
+      - "None/Null 역참조"
+      - "경계값/분기 누락"
+      - "예외 처리 누락"
+      - "상태 불일치/레이스"
+    severity_guidelines:
+      info: "잠재적 위험 가능성"
+      warn: "현실적 결함 가능성"
+      blocking: "재현 가능/높은 확률의 결함"
+    prompt: |
+      You are BugRiskAgent. Find potential null/None issues and logic bugs.
+      Be conservative; mark blocking for high-confidence defects.
+      Return JSON only.
+    schema:
+      type: object
+      properties:
+        summary: { type: string }
+        comments:
+          type: array
+          items:
+            type: object
+            properties:
+              path: { type: string }
+              line: { type: integer }
+              agent: { type: string }
+              level: { type: string, enum: [info, warn, blocking] }
+              body: { type: string }
+        blocking: { type: boolean }
+  PerformanceAgent:
+    purpose: "반복/N+1 성능 문제"
+    blocking: false
+    checks:
+      - "N+1 쿼리 패턴"
+      - "중첩 반복 O(n^2)+"
+      - "불필요한 반복 호출"
+    severity_guidelines:
+      info: "경미한 비효율"
+      warn: "성능 저하 가능성"
+      blocking: "없음"
+    prompt: |
+      You are PerformanceAgent. Identify performance risks (N+1, nested loops).
+      Return JSON only.
+    schema:
+      type: object
+      properties:
+        summary: { type: string }
+        comments:
+          type: array
+          items:
+            type: object
+            properties:
+              path: { type: string }
+              line: { type: integer }
+              agent: { type: string }
+              level: { type: string, enum: [info, warn, blocking] }
+              body: { type: string }
+        blocking: { type: boolean }
+  SecurityAgent:
+    purpose: "인증/인가 및 보안 결함"
+    blocking: true
+    checks:
+      - "인증/인가 누락"
+      - "입력 검증 누락"
+      - "권한 상승/우회 가능"
+      - "민감정보 노출"
+    severity_guidelines:
+      info: "보안 위험 신호"
+      warn: "취약점 가능성"
+      blocking: "명확한 취약점"
+    prompt: |
+      You are SecurityAgent. Look for auth/permission and input validation flaws.
+      Mark blocking for critical security issues.
+      Return JSON only.
+    schema:
+      type: object
+      properties:
+        summary: { type: string }
+        comments:
+          type: array
+          items:
+            type: object
+            properties:
+              path: { type: string }
+              line: { type: integer }
+              agent: { type: string }
+              level: { type: string, enum: [info, warn, blocking] }
+              body: { type: string }
+        blocking: { type: boolean }
+  SummaryAgent:
+    purpose: "리뷰 요약"
+    blocking: false
+    checks:
+      - "핵심 이슈 3~5줄 요약"
+    severity_guidelines:
+      info: "요약"
+      warn: "없음"
+      blocking: "없음"
+    prompt: |
+      You are SummaryAgent. Summarize the review findings in 3-5 bullet lines.
+      Return JSON only.
+    schema:
+      type: object
+      properties:
+        summary: { type: string }
+        comments: { type: array }
+        blocking: { type: boolean }
