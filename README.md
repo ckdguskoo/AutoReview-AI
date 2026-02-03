@@ -14,7 +14,7 @@ flowchart TD
   ReviewScript --> ReviewJson[ai_review.json]
   ReviewJson --> PostReview[PR Review Comment]
   ReviewJson --> Suitability[Check: ai_suitability]
-  Suitability -->|pass| AutoMerge[Enable auto-merge (rebase)]
+  Suitability -->|pass| AutoMerge[Enable auto-merge rebase]
   Suitability -->|fail or blocking| AutoFixWF[Workflow: AI AutoFix]
   AutoFixWF --> AutoFixScript[scripts/ai_autofix.py]
   AutoFixScript --> OpenAI2[OpenAI Responses API]
