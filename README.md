@@ -1,4 +1,3 @@
-<img width="644" height="571" alt="스크린샷 2026-02-01 005041" src="https://github.com/user-attachments/assets/577fee30-98f1-42b1-bac3-fe1b3ac46e4f" />﻿# AutoReview-AI
 
 PR 생성부터 AI 리뷰, 자동 수정, rebase 자동 머지까지 이어지는 **AI 기반 코드 리뷰/PR 평가 자동화 시스템**입니다. GitHub Actions와 멀티 에이전트를 활용해 리뷰 품질과 일관성을 높이고, 위험도가 높은 변경은 자동으로 차단/수정하도록 설계되었습니다.
 
