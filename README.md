@@ -1,4 +1,4 @@
-﻿# AutoReview-AI
+<img width="644" height="571" alt="스크린샷 2026-02-01 005041" src="https://github.com/user-attachments/assets/577fee30-98f1-42b1-bac3-fe1b3ac46e4f" />﻿# AutoReview-AI
 
 PR 생성부터 AI 리뷰, 자동 수정, rebase 자동 머지까지 이어지는 **AI 기반 코드 리뷰/PR 평가 자동화 시스템**입니다. GitHub Actions와 멀티 에이전트를 활용해 리뷰 품질과 일관성을 높이고, 위험도가 높은 변경은 자동으로 차단/수정하도록 설계되었습니다.
 
@@ -111,6 +111,11 @@ GET http://127.0.0.1:8000/health
 - `config/agent-prompts.yaml`: 에이전트 프롬프트/체크리스트
 - `config/agents.yaml`: 에이전트 메타데이터(포커스/우선순위 등)
 - `config/rules/*.yaml`: 언어/프레임워크 규칙 템플릿
+
+## 동작 테스트
+<img width="735" height="657" alt="스크린샷 2026-02-01 005054" src="https://github.com/user-attachments/assets/39566745-706a-4ab5-8893-522167287ba9" />
+<img width="644" height="571" alt="스크린샷 2026-02-01 005041" src="https://github.com/user-attachments/assets/eaa36286-1871-4a67-bded-ffb81a71f4b9" />
+
 
 ## 개발/운영 FAQ
 
